@@ -255,7 +255,50 @@ Usage: import { LinearGradient } from expo-linear-gradient
 `
 see doc
 
+-> There is a built-in component called ImageBackground in react-native. 
+This renders image in the background.
+Usage: resizeMode 'cover' will adjust the image to the screen through zoom
+in or zoom out without making it ugly. And flex 1 is to take all the 
+available screen.
+BTS: ImageBackground structured like this: first is View and Image inside it
+. Now style prop is applied to View, and imageStyle is applied to Image.
+For example, so to make it more transparet simply add the style to 
+imageStyle.
 
+`
+	<ImageBackground
+	 source={require('../assets/images/bg-image.jpg')}
+	 resizeMode='cover'
+	 style={{flex: 1}}
+	 >
+		<StartGameScreen />
+	</ImageBackground>
+
+`
+see docs
+
+-> Alert built in component in RN. It compiles to native alert UI element.
+It provides an object with methods like: alert, prompt, etc. The alert 
+method takes title argument, text argument, and then array of objects for
+buttons. Each button object will take text, style, onPress attribute and
+method.
+
+`
+	 Alert.alert(
+	    "Invalid input", 
+		'Number has to be greater than 0 and less than 100',
+		[{
+		text: 'Okay', 
+		style: 'destructive', 
+		onPress: () => setEnteredNum('')
+	)																	
+`
+
+-> react-native-safe-area-context: Earlier SafeAreaView but deprecated, now
+it's react-native-safe-area-context. It's used for making the content below
+the notch. This package detects what device the app is running on, and add
+appropiate paddings to make it below the content area wrapped inside the it
+below the notch.
 
 
 
@@ -277,4 +320,9 @@ with flexDirection to row. Then have each button inside its own View element
 and apply flex 1 to each View. It will stretch the View to available spaces
 and buttons completely occupy the View.
 
-
+4. The difference between StatusBar and React-Native-Safe-Area-Context is 
+that when StatusBar is used the the whole status bar is excluded from the
+app. Whereas the when statusbar is not used and react-native-safe-area-context
+is used the if the (rnsac) is not wrapped on to the component it will cover
+the the status bar as well, but if rnsac is wrapped around any components it
+will simply make it below the notch - only the wrapped component.
