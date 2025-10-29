@@ -298,9 +298,13 @@ method.
 it's react-native-safe-area-context. It's used for making the content below
 the notch. This package detects what device the app is running on, and add
 appropiate paddings to make it below the content area wrapped inside the it
-below the notch.
+below the notch. See docs. IMP.
 
+-> Use reusable component that can be used in different places.
 
+-> Global Styling: To have a global styling create a separate js file and 
+create and style object with different common stylings and then import and 
+use it in desired places.
 
 ---
 Extra learnings:
