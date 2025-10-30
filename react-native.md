@@ -216,7 +216,7 @@ It will make the status bar visible.
 There are also props for other usecases. see docs for more
 
 
-### Fundamentals deep dive
+### Section 4: Fundamentals deep dive
 Agenda: Building Real Apps & Layouts 
 * Build a Complete Demo App("Guess my number" game)
 * New Core Components
@@ -305,6 +305,58 @@ below the notch. See docs. IMP.
 -> Global Styling: To have a global styling create a separate js file and 
 create and style object with different common stylings and then import and 
 use it in desired places.
+
+-> Icons: RN comes with icons you just have to import it and use it. it must 
+be imported from '@expo/vector-icons'. see docs.
+
+-> Fonts: There is an extra package is to be installed: expo-font. Fonts have
+to be applied to root component (layout) to for it to be applied app wide.
+It can also be applied to individual screens and components.
+`
+	import { useFonts } from 'expo-font';
+	import AppLoading from 'expo-app-loading';
+	// now inside the component.
+	// see docs for more. normally google related fonts can be installed 
+	// directly using the dedicated font packages. see expo-font doc for that
+	// this method is applied to general fonts whose file you have in your
+	// app.
+	// NOw to do this download font files e.g. OpenSans-Bold.ttf and store
+	// it in assets/fonts/ folder.  Now they can be added using useFonts.
+
+	const [fontsLoaded] = useFonts({
+		'open-sans': require('./assets/fonst/OpenSans-Bold.ttf')
+	})
+
+	if (!fontLaoded) {
+		return <AppLoading />
+	}
+
+	// font application anywhere in the app. just apply like this
+	text: {
+		fontFamily: 'open-sans'
+	}
+
+`
+
+Now while loading fonts, you would want to show loading screen, or splash 
+screen. For this you can use a package for that: expo-app-loading. This will 
+give a utility component, which will prolong the splash screen, and will 
+ensure that the splash screen is still shown until some condition is left.
+
+-> Text component in RN can contain child Text components, but only Text.
+The style applied to parent Text component will be inherited by the child Text
+component.
+
+-> Image component: In built component which takes source as a image source
+attribute. The value of source should be require('image-path')
+
+### Section 5: Building Adaptive User Interfaces (Adapt to platform sizes)
+
+
+
+
+
+
 
 ---
 Extra learnings:
