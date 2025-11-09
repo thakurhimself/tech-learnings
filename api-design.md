@@ -69,7 +69,50 @@ services, which third party developers can integrate into their own applications
 collaborate on a project. Not available to public, hence leverage auth mechanism
 to ensure they are only used by authorized partners.
 
-[types of apis](./assets/types-of-apis.svg)
+![types of apis](./assets/types-of-apis.svg)
+
+
+**What are the most common API architectural styles?**
+
+You can categorize APIs according to their architecture style. The most 
+frequently used architectural styles are:
+
+1. **REST** : The most popular for transfering data over internet. In a RESTful
+context, resources are accessible via endpoints, and operations are performed on
+those resources with standard HTTP methods such as GET, POST, PUT, and DELETE.
+
+2. **SOAP** : stands for Simple Object Access Protocol, uses XML to transfer
+highly structured messages b/w a client and server. SOAP is often used in 
+enterprise environment of legacy systems, and while it includes advanced 
+securty features, it can be slower than other API architectures.
+
+3. **GraphQL** : open source query language that enables clients to interact
+with a single API endpoint to retrieve the exact data they need, without 
+chaining multiple requests together. This approach reduces the number of round
+trips between the client and server, which can be useful for applications that
+may run on slow or unreliable connections.
+
+4. **Webhooks**: used to implement event-driven architectures, in which requests
+are automatically sent in response to event-based triggers. For instance, when a
+specific event occurs in an application, such as a payment being made, the app
+can send an HTTP request to a pre-configured webhook URL with the relevant event
+data in the request payload. The system that receives the webhook can then 
+process the event and take the appropiate action.
+
+5. **gRPC**: RPC stands Remote Procedure Call, and gRPC APIs were originated in
+Google. In this architecture, a client can call on a server as if it were a 
+local object, which makes it easier for distributed apps and systems to communi-
+cate with one another.
+
+
+**What are some common API use cases?**
+
+1. Integrating with internal and external systems.
+2. Adding or enhancing functionality.
+3. Connecting IoT devices.
+4. Creating more scalable systems.
+5. Reducing costs
+6. Improving organizational security and governance.
 
 
 
