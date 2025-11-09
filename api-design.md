@@ -7,7 +7,7 @@ different distinct chunck of codes.
 
 How does APIs work?
 
-![api-illustration]('assets/api-illus.svg')
+![api-illustration](./assets/api-illus.svg)
 
 APIs work by sharing data b/w applications, systems, and devices. This happens
 through a request and response cycle. The request is sent to the API, which
