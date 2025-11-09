@@ -6,4 +6,9 @@ to commnunicate and tranfer data. Developers use this to brdige the gap b/w
 different distinct chunck of codes.
 
 How does APIs work?
-![api ilustration]('./assets/api-illus.svg')
+
+![api ilustration]('/assets/api-illus.svg')
+
+APIs work by sharing data b/w applications, systems, and devices. This happens
+through a request and response cycle. The request is sent to the API, which
+retrieves the data and returns it to the user.
