@@ -239,3 +239,94 @@ which you put in that JSX.
 Components with many state updates spread across many event handlers can get 
 overwhelming. For these cases, you can consolidate all the state update logic 
 outside your component in a single function, called a reducer.
+
+-> Consolidate state logic with a reducer:
+To reduce complexity and keep all your logic in one easy-to-access place, you 
+can move the state logic into a single function outside your component, called a
+"reducer".
+Reducers are a different way to handle state. You can migrate from useState to
+useReducer in three steps:
+
+1. **Move** from setting state to dispatching actions.
+	Managing state with reducers is slightly different from directly setting 
+	state. Instead of telling React "what to do" by setting state, you specify
+	"what the user just did" by dispatching "actions" from your event handlers.
+	Example:
+
+	`
+		dispatch({
+			type: 'added',
+			id: nextId++,
+			text: text
+		})
+	`
+
+	The object you pass to dispatch is called an "action". It is regular JS 
+	object. It should contain the minimal information about what happened. An
+	action object can have any shape. By convention, it is common to give it a
+	string type that describes what happened, and pass any additional info in 
+	other fields.
+
+2. **Write** a reducer function.
+	A reducer funciotn is where you put your state logic. It takes two arguments
+	, the current state and the action object, and it returns next state:
+
+	`
+		// use switch statement to track actions. just like redux
+
+		function reducerFunc(state, action) {
+			switch(action.type) {
+				case 'added': {
+					return [...state, { id: action.id, text: action.text }]
+				}
+				
+				default: { throw Error('Unknown action: ' + action.type }
+			}
+		}
+
+		// use braces so that variables declared inside of different cases don't
+		clash with each other.
+	`
+
+	React will set the state to what you return from the reducer. Because the
+	reducer function takes state as an argument, you can declare it outside of 
+	your component. This decreases the indentation level and can make your code
+	easier to read.
+
+3. **Use** the reducer from your component.
+	Import the useReducer Hook from React and replace the useState with it.
+
+	`
+		import { useReducer } from 'React';
+
+		const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+	`
+
+	The useReducer Hook takes two arguments:
+	* A reducer function
+	* An initial state
+
+	And it returns:
+	* A stateful value
+	* A dispatch function (to "dispatch user actions to the reducer)
+
+	You can move the reducer to a different file. Component logic can be easier
+	to read when you separate concerns like this. Now the event handlers only 
+	specifiy what happened by dispatching actions, and the reducer function
+	determines how the state updates in response to them.
+
+
+-> Writing reducers well:
+Two tips:
+
+1. Reducers must be pure : like state updater functions, reducers run during
+	rendering (actions are queued until the next render). This means they must
+	be pure - same inputs always result in the same output. They should not send
+	requests, schedule timeouts, or perform any side effects (operations that 
+	impact things outside the component). They should update objects and arrays
+	without mutations.
+
+2. Each action describes a single user interaction, even if that leads to 
+	multiple changes in the data.
+
+
