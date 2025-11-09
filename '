@@ -1,12 +1,12 @@
 # API (Applicaion programming interfact)
 
-**What is an API?**
+"What is an API?"
 
 It is set of principles and protocols that enable different software components
 to commnunicate and tranfer data. Developers use this to brdige the gap b/w
 different distinct chunck of codes.
 
-**How does APIs work?**
+"How does APIs work?"
 
 ![api-illustration](./assets/api-illus.svg)
 
@@ -48,31 +48,6 @@ response typically includes the following components:
 	, except they are used to provide additional information about the server's
 	response.
 	* Response body: The repsonse body includes the actual data or content the
-	client asked for - or an error message if something went wrong.
-
-
-**What are benefits of APIs?**
-
-APIs connect various software systems, applications, and devices for allowing
-them to communicate with one another. Benefits: Automation, Innovation, Security
-, and Cost Efficiency.
-
-**What are the different types of APIs?**
-
-There are many different types of APIs and ways to categorize them.
-* Private APIs: used to connect within a single organization, and not available
-for third-party use.
-* Public APIs: provide access to an organization's data, functionality, or 
-services, which third party developers can integrate into their own applications
-. Some are billable and some are free.
-* Partner APIs: Enable two companies to share data or functionality in order to
-collaborate on a project. Not available to public, hence leverage auth mechanism
-to ensure they are only used by authorized partners.
-
-[types of apis](./assets/types-of-apis.svg)
-
-
-
-
+	client asked for - or an error message if something went wrong
 
 
