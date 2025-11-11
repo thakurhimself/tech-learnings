@@ -330,3 +330,95 @@ Two tips:
 	multiple changes in the data.
 
 
+
+### Passig Data Deeply with Context
+Usually you will pass information from a parent component to a child component
+via props. But if tree size is large and receiving component is down the tree
+then prop drilling is not best way. Context lets the parent component make some
+information available to any component in the tree below it - no matter how deep
+- without passing it explicitly through props.
+
+You add context in 3 steps:
+
+1. **Create** a context.
+2. **Use** the context from the component that needs the data.
+3. **Provide** that context from the component that specifies thet data.
+
+Context lets a parent - even a distant one - provide some data to the entire 
+tree inside of it.
+
+-> Step 1: Create the context: You need to create the context. You'll need to
+export it from a file so that your components can use it. You can declare 
+context in the same file as component, but it's better practice to separate the
+concern.
+
+`
+	import { createContext } form 'react';
+
+	export const LevelContext = createContext(1);
+`
+
+-> Step 2: Use the context: import the useContext Hook from React and your 
+context:
+
+`
+	import { useContext } from 'react';
+	import { LevelContext } from './LevelContext.js';
+
+	export default function Heading({children}) {
+		const level = useContext(LevelContext);
+		//...
+	}
+`
+
+useContext is a Hook. It tells React that the Heading component wants to read
+the LevelContext in the given example.
+
+-> Step 3: Provide the context:
+
+`
+	import { LevelContext } from './LevelContext.js';
+	export default function Section({level, children}) {
+		return (
+			<section>
+				<LevelContext value={level}>
+					{children}
+				</LevelCotext>
+			</section>
+		)
+	}
+	// This tells React: "if any component inside this <Section> asks for Level
+	// Context, give them this level. The component will use the value of 
+	// nearest <LevelContext> in the UI tree above it.
+`
+
+Note - Context passes through intermediate components. Context lets you write
+components that 'adapt to their surroundings' and display themselves differently
+depending on where(or, in other words, in which context) they are being rendered
+. How context works might remind you of CSS property inheritance. Different 
+React contexts don't override each other. Each context that you make with 
+createContext() is completely separate from other ones, and ties together 
+components using and providing that particular context. One component may use or
+provide many different contexts without a problem.
+
+-> Few alternatives before you use context:
+
+1. Start by passing props.
+2. Extract components and pass JSX as children to them.
+
+-> Use cases for context
+
+* Theming
+* Current accout
+* Routing
+* Managing state
+
+In general if some information is needed by distant components in differnt parts
+of the tree, it's a good indication that context will help you.
+
+
+### Scaling up with Renducer and Context
+Reducers let you consolidate a component's state update logic. Context lets you
+pass information deep down to other components. You can combine reducers and 
+context together to manage state of a complex screen.
+
