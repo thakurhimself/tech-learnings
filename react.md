@@ -422,3 +422,36 @@ Reducers let you consolidate a component's state update logic. Context lets you
 pass information deep down to other components. You can combine reducers and 
 context together to manage state of a complex screen.
 
+Following are the steps to combine a reducer with context:
+
+1. **Create** the context
+2. **Put** state and dispatch into context
+3. **Use** context anywhere in the tree
+
+Note - You will create two separate contexts. One for providing the actual state.
+Second for the providing the functions that lets the components dispatch actions.
+Export them from a separate file so that you can later import them from other 
+files. see docs of how to?
+
+Note - You import context in you component. Take state and dispatch returned by
+useReducer() and provide them to the entire tree below. Now you don't need to 
+pass the state and or the event handler down the tree. Instead use useContext() 
+to read both state and dispatch from any component below the tree. The state 
+still 'lives' in the top-level component, managed with useReducer.
+
+-> Moving all wiring into a single file:- see docs for how to do. You can create
+a custom hook to return context values, and funcs.
+
+
+
+# Hooks list
+
+1. useState
+
+2. useContext
+
+3. useReducer
+
+
+
+## Expape Hatches
