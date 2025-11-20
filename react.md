@@ -442,6 +442,154 @@ still 'lives' in the top-level component, managed with useReducer.
 -> Moving all wiring into a single file:- see docs for how to do. You can create
 a custom hook to return context values, and funcs.
 
+## Escape Hatches
+
+### Referencing Values with Refs
+When you want a component to remember some info but without triggering new
+renders, you can use ref.
+
+-> Adding a ref to your component
+
+`
+	import { useRef } from 'react';
+	// inside the component
+
+	const ref = useRef(0);
+`
+
+Inside your component, call the useRef Hook and pass the initial value that you
+want to reference as the only argument. For example see above.
+
+useRef returns an object like this:
+
+`
+	{
+		current: 0	// The value you passed to useRef
+	}
+`
+
+You can access the current value of the ref through the `ref.current` property.
+This value is intentionally mutable, meaning you can both read and write to it.
+It's like a secret pocket of your component that React doesn't track. (This is 
+what makes it an 'escape hatch' from React's one-way data flow)
+The ref, like state, could point to anything: a string, an object, a number, or
+even a function. Unlike state, ref is plain JS object with the current property
+that you can read and modify.
+
+Note - Like state, refs are retained by React b/w re-renders. However, setting 
+state re-renders a component. Changing a ref doesn't. You can combine refs and
+state in a single component.
+
+When a piece of information is used for rendering, keep it in state. When a piece
+of information is only needed by event handlers and changing it doesn't require
+a re-render, using a ref may be more efficient. When something is displayed on 
+the screen it makes sense to use state value for it. Setting a state triggers the
+re-render that reflect the new value. If you try to do this with refs React would
+never re-render the component and latest update will not be reflected on the 
+screen. 
+This is why reading ref.current during render leads to unreliable code. if you 
+need that, use state instead.
+
+-> When to use refs: use a ref when your component needs to 'step outside' React
+and communicate with external APIs - often browser API that won't impact the 
+appearance of the component.
+
+* Storing timeout IDs
+* Storing and manipulating DOM elements
+* Storing other objects that are aren't necessary to calculate the JSX.
+
+If your component needs to store some value, but it doesn't impact the rendering
+logic, choose refs.
+
+-> Best practices for refs:
+
+* Treat refs as an escape hatch.
+* Don't read or write ref.current during rendering: if some information is needed
+during rendering, use state instead. Since React doesn't know when ref.current
+changes, even reading it while rendering makes your component's behaviour hard to
+prodict. (The only exception to this is code like ` if(!ref.current) ref.current 
+= new Thing()` which only sets the ref once during the first render.
+
+Limitations of React state don't apply to refs. For exmaple, state acts like a
+snapshot of for every render and doesn't update syncronoulsy. But when you mutate
+the current value of a ref, it changes immediately. This is because the ref 
+itself is a regular JS object, and so it behaves like so. You can mutate it as 
+long as mutating isn't used for rendering.
+
+### Manipulating the DOM with refs
+Sometimes you might need access to the DOM elements managed by React - for 
+example, to focus a node, scroll to it, or measure its size and position. You 
+will need a ref to the DOM node.
+
+-> Getting a ref to the node
+
+`
+	import { useRef } from 'react';
+
+	// inside the component
+	const myRef = useRef(null);
+	<div ref={myRef} >
+`
+
+The useRef Hook returns an object with a single property called current.
+Initially, myRef.current will be null. When React creates a DOM node for this
+<div>, React will put a reference to this node into myRef.current. You can then
+access this DOM node from your event handlers and use the built-in browser APIs
+defined on it.
+
+Sometimes you might need a ref to each item in the list, and you don't know how
+many you will have. One solution is to pass a function to the ref attribute. This
+is called a ref callback. React will call your ref callback with the DOM node 
+when it's time to set the ref, and call the cleanup function returned from the
+callback when it's time to clear it. This lets you maintain your own array or a 
+Map, and access any ref by its index or some kind of ID. see docs.
+
+Note - Refs are escape hatch. Manually manipulating another component's DOM nodes
+can make your code fragile.
+
+-> Accessing another component's DOM nodes: You can pass refs from parent 
+component to child components just like any other prop.
+When ref is passed to another component as prop, you may want to restrict the 
+exposed functionality. You can do that with useImeprativeHandle
+
+`
+	function Myinput({ref}) {
+		const realInputRef = useRef(null);
+		useImperativeHandle(ref, () => ({
+			focus() {
+				realInputRef.current.focus();
+			}
+		}));
+		return <input ref={realInputRef} />
+	}
+`
+Here, realInputRef inside MyInput holds the actual input DOM node. However, 
+useImperativeHandle instructs React to provide your own special object as the 
+value of a ref to the parent component. So inputRef.current inside the Form 
+component will only have the focus method. In this case, the ref "handle" is not
+the DOM node, but the custom object you create inside useImperativeHandle call.
+
+-> When React attaches the refs:
+In React, every update is split in two phases:
+
+* During **render**, React calls your components to figure out what should be on
+the screen.
+* During **commit**, React applies changes to the DOM.
+
+In general, youi don't want to access refs during rendering. That goes for refs 
+holding DOM nodes as well. During the first render, the DOM nodes have not yet
+been created, so ref.current will be null. And during the rendering of updates,
+the DOM nodes haven't been updated yet. So it's too early to read them.
+
+React sets ref.current during the commit. Before updating the DOM, React sets the
+affected ref.current values to null. After updating the DOM React immediately 
+sets them to the corresponding DOM nodes.
+
+Usually, you will access refs from event handlers. If you want to do something
+with a ref, but there is no particular event to do it, you might need an Effect.
+
+-> Flushing state updates asynchronously with flushSync
+
 
 
 # Hooks list
@@ -454,4 +602,3 @@ a custom hook to return context values, and funcs.
 
 
 
-## Expape Hatches
