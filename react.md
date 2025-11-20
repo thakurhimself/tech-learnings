@@ -589,7 +589,41 @@ Usually, you will access refs from event handlers. If you want to do something
 with a ref, but there is no particular event to do it, you might need an Effect.
 
 -> Flushing state updates asynchronously with flushSync
+Imagine there is list of todos and everytime you add todo, with the help of ref,
+you try to display last element using scrollIntoView. But it won't happen and 
+only shows the second last todo.
+In React, state updates are queued. However, here it causes a problem because
+setTodos does not immediately update the DOM. So the time you scroll the list to
+its last element, the todo has not yet been added. This is why scrolling always
+"lags behind" by one item.
+To fix this issue, you can force React to update ("flush") the DOM synchronously.
+To do this, import *flushSync* from react-dom and wrap the state update into a 
+flushSync call:
 
+`
+	flushSync(() => {
+		setTodos([...todos, newTodo]);
+	});
+	listRef.current.lastchild.scrollIntoView();
+`
+
+This will instruct React to update the DOM synchronously right after the code
+wrapped in flushSync executes. As a result, the last todo will already be in the
+DOM by the time you try to scroll to it.
+
+-> Best practices for DOM manipulation with refs:
+Refs are an escape hatches. You should only use them when you have to "step 
+outside React". Common examples of this include managing focus, scroll position,
+or calling browser APIs that React does not expose.
+If you stick to non-destructive actions like focusing and scrolling, you 
+shouldn't encounter any problems. However, if you try to modity the DOM manually,
+you can risk conflicting with the changes React is making.	
+
+* **Avoid changin DOM nodes managed by React**. Modifying, adding children to, or
+removing children from elements that are managed by React can lead to 
+incosistent visaul results or crashes like above.
+
+* **You can safely modify parts of the DOM that React has no reason to update**.
 
 
 # Hooks list
