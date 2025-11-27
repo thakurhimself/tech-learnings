@@ -626,6 +626,112 @@ incosistent visaul results or crashes like above.
 * **You can safely modify parts of the DOM that React has no reason to update**.
 
 
+### Synchronizing with Effects
+Effects let you run some code after rendering so that you can synchronize your
+component with some system outside of React.
+
+-> What are Effects and how are they different from events?
+There are two types of logic inside React components:
+
+1. Rendering code :- Lives at the top level of your component. This is where you
+take the props and state, transform them, and return the JSX you want to see on 
+the screen. Rendering code must be pure like a math formula.
+
+2. Event handlers (introduced in Adding interactivity):- they are nested funcs 
+inside your components that do things rather than just calculate them. An event
+handler might update an input field, submit an HTTP post request a buy product,
+or navigate the user to another screen. Event handlers cantain "side effects"
+caused by a specific user action.
+
+Sometimes this isn't enough. Consider a ChatRoom component that must connect to
+the chat server whatever it's visible on the screen. Connecting to a server is 
+not a pure calculation (it's a side effect) so it can't happen during rendering.
+However, there is no single particular event lika a click that causes ChatRoom
+to be displayed.
+
+**Effects let you specify side effects that are caused by rendering itself, 
+rather than by a particular events**. Sending a message in the chat is an event
+because it is directly caused by the user clicking a specific button. However,
+setting up a server connection is an Effect because it should happen no matter
+which interaction caused the component to appear. Effects run at the end of a
+commit after the commit after the screen updates. This is a good time to sync
+the React components with some external system.
+
+-> You might not need an effect:- Don't rush to add effects to your components.
+Keep in mind that Effects are typically used to "step out" of your React code
+and sync with some external system. This includes browser APIs, third-party 
+widgets, network, and so on. If your effect only adjusts some state based on 
+other state, you might not need an Effect.
+
+-> How to write an Effect:-
+Steps to write an Effect:
+
+1. Declare an Effect:- By default, you Effect will run after every commit.
+	Everytime your component renders, React will update the screen and then run
+	the code inside useEffect. In other words, useEffect "delays" a piece of 
+	code from running until that render is reflected on the screen.
+
+	Note - Don't try to do something with DOM node during rendering. In React,
+	rendering should be a pure calculations of JSX and should not contain side
+	effects like modifying the DOM. Moreover during first rendering the DOM 
+	doesn't exist yet; the app will break. So wrap the side effect with 
+	useEffect to move it out of the rendering calculation. By doing this, you
+	let the React update the screen first. Then your Effect runs.
+	
+	Note - Effects run after every render.
+
+2. Specify the Effect dependencies:- Mosts effects should only re-run when 
+needed rather than after every render.
+	You can tell React to skip unnecessarily re-running the Effect by specifying
+	an array of dependencies as the second argument to the useEffect call. Start
+	by adding an empty [] array as the second argument. An empty array makes the
+	useState runs only once after the render and prevents re-running on every 
+	re-render.
+	The dependency array can contain multiple dependencies. React will only skip
+	re-running the Effect if all of the dependencies you specify have exactly the
+	same values as they had during the previous render. React compares the 
+	dependency values using the Object.is comparision. 
+
+	Note - The ref object has a stable identity: React guarantees you'll always
+	get the same object from the same useRef call on every render. It never 
+	changes, so it will never by itself cause the Effect to re-run. Therefore, it
+	does not matter whether you include it or not. Including it is fine too.
+	The set function returned by useState also have stable identity, so you'll
+	often see them omitted from the dependencies too. If the linter lets you omit
+	a dependency without errors, it is safe to do.
+	Omitting always-stable dependencies only works when the linter can "see" that
+	the object is stable. For exmaple, if ref was passed from a parent component,
+	you would have to specify it in the dependency array. However, this is good
+	because you can't know whether the parent component always passes the same ref
+	, or passes one of several refs conditionally. So you Effect would depend on 
+	which ref is passed.
+
+3. Add cleanup if needed:- Some Effects need to specify how to stop, undo, or
+clean up whatever they were doing.
+	The code inside the Effect doesn't use any props or state, so your dependency
+	array is []. This tells React to only run this code when the component 
+	"mounts", i.e. appears on the screen for the first time.
+	Suppose a component makes a connection outside and then you navigate to other
+	page. The previous component is unmounted but the connection is not destroyed.
+	When you come back that component again then connection is again established.
+	This way is connections would keep piling up.
+	To help you spot them quickly, in development React remounts every component
+	once immediately after its inintal mount.
+	To fix this issue, return a cleanup function from your Effect. React will call
+	you cleanup function each time before the Effect runs again, and one final 
+	time when the component unmounts (gets removed).
+
+
+-> How to handle the Effect firing twice in development?
+React intentionally remounts your components in development to find bugs. The 
+right question isn't "how to run an Effect once", but "how to fix my Effect so 
+that it works after remounting".
+Usually, the answer is to implement the cleanup function. The cleanup function
+should stop or undo whatever the Effect was doing. The rule of thumb is that user
+shouldn't be able to distinguish between the Effect running once (as in prod) and
+a setup -> cleanup -> setup sequence (as you'd see in development).
+
+
 # Hooks list
 
 1. useState
