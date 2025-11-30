@@ -731,6 +731,181 @@ should stop or undo whatever the Effect was doing. The rule of thumb is that use
 shouldn't be able to distinguish between the Effect running once (as in prod) and
 a setup -> cleanup -> setup sequence (as you'd see in development).
 
+Note - Don't use refs to prevent Effects from firing in development.
+
+Most of the Effects you'll write will fit into one of the common patterns below:
+
+* Controlling non-React widgets:
+	Sometimes you need to add UI widgets that aren't written in React. For example
+
+	`
+		useEffect(() => {
+			const map = mapRef.current;
+			map.setZoomLevel(zoomLevel);
+		}, [zoomLevel]);
+	`
+
+	Note that there is no cleanup is this case.
+
+	Some APIs may not allow you to call them twice in a row. For example, the 
+	showModal method of the built-in <dialog> element throws if you call it twice.
+	Implement the cleanup function and make it close the dialog:
+
+	`
+		useEffect(() => {
+			const dialog = dialogRef.current;
+			dialog.showModal();
+			
+			return () => dialog.close();
+		}, []);
+	`
+
+* Subscribing to events
+
+	`
+		useEffect(() => {
+			function handleScroll(e) {
+				console.log("window.scrollX, window.scrollY);
+			}
+			window.addEventListener('scroll', handleScroll);
+
+			return () => window.removeEventListener('scroll', handleScroll);
+		}, []);
+	`
+
+	In development, your Effect will call addEventListener(), then immediately
+	removeListener(), and then addEventListener() again with the same handler.
+	So there would be only one active subscription at a time. This has the same
+	user-visible behavior as calling addEventListener() once, as in production.
+
+* Triggering animations
+	if your Effect animats something in, the cleanup function should reset the 
+	animation to the initial values:
+
+	`
+		useEffect(() => {
+			const node = ref.current;
+			node.style.opacity = 1; // trigger the animation
+
+			return () => {
+				node.style.opacity = 0;
+			}
+		}, []);
+	`
+
+* Fetching data
+	If your Effects fetches something, the cleanup function should either abort
+	the fetch or ignore its result:
+
+	`
+		useEffect(() => {
+			let ignore = false;
+
+			async function startFetching() {
+				const json = await fetchTodos(useId);
+				if (!ignore) {
+					setTodos(json);
+				}
+			}
+
+			startFetching();
+
+			return () => {
+				ignore = true;
+			}
+
+		}, [userId]);
+	`
+
+	You can't undo a network request that already happened, but your cleanup 
+	function should ensure that the fetch that's not relevant anymore doesn't keep
+	affecting your application.
+
+	Note - you can deduplicates requests and caches their response b/w components.
+	This will not only improve the development experience, but also make your app
+	feel faster. If you are using a framework, use it's built-in data fetching 
+	mechanism. Otherwise, consider using or building a client-side cache: useSwR
+	is a popular solution.
+
+* Sending analytics:
+	
+	`
+		useEffect(() => {
+			logVisit(url);
+		}, [url]);
+	`
+
+	see docs.
+
+* Not an Effect: Initializing the application
+	Some logic should only run once when the application starts. You can put
+	outside your components. 
+
+	`
+		if (typeof window !== 'undefined') {
+			// Check if we're running in the browser.
+			checkAuthToken();
+			loadDataFromLocalStorage();
+		}
+
+		function App() {
+			...
+		}
+	`
+
+	This guarantees that such logic only runs once after the browser laods the
+	page.
+
+* Not an Effect: Buying a product
+	Such API calls must be placed in a button event handler
+
+
+### You might not need an Effect
+To help you gain the right intuition, let's look at some common concrete examples:
+
+-> Updateing state based on props or state.
+When something can be calculated from the existing props or state, don't put it in
+state. Instead calculate it during rendering. This makes your code faster (you 
+avoid the extra 'cascading" updates), simpler (you remove some code), and less
+error-prone (you avoid bugs caused by different state variables getting out of sync
+with each other). see Thinking in React.
+
+-> Caching expensive calculations
+You can cache an expensive calculation by wrapping it in a useMemo Hook.
+Note - React compiler can automatically memoize expensive calculations for you,
+eliminating the need for manual useMemo in many cases.
+
+`
+	cons visibleTodos = useMemo(() => {
+		// doesn't re-run unless todos or filter change.
+		return getFilteredTodos(todos, filter);
+	}, [todos, filter]);
+`
+
+This tells React that you don't want the inner function to re-run unless either 
+todos or filter have changed. 
+The function you wrap in useMemo runs during rendering, so this only works for pure
+calculations.
+
+How to tell if a calculation is expensive?
+In general unless you're creating or looping over thousands of objects, it's 
+probably not expensive. You can console log to measure the time spent in a piece
+of code.
+
+`
+	console.time('filter array');
+	const visibleTodos = getFilteredTods(todos, filter);
+	console.log("filter array");
+`
+
+useMemo won't make the first render faster. It only helps you skip unnecessary work
+on updates.
+Keep in mind that your machine is probably faster than your user's so it's a good
+idea to test the performace with an artificial slowdown. For example, Chrome offers
+a CPU throttling option for this.
+
+
+	
 
 # Hooks list
 
