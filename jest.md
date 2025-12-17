@@ -85,3 +85,77 @@ Tip: The function that throws an exception needs to be invoked within a wrapping
 function otherwise the toThrow assertion will fail.
 
 -> And more: [expect-ref](https://jestjs.io/docs/expect)
+
+
+
+
+
+
+# Testing library: React Testing library
+React Testing library builds on top of **DOM Testing library** by adding APIs for 
+working with React components.
+
+-> Installation:
+
+`
+	npm install --save-dev @testing-library/react @testing-library/dom @types/react
+	@types/react-dom
+`
+
+With Typescript: To get full type coverage install react and react-dom as well.
+
+
+-> The problem:
+	You want to write maintainable tests for your React components. As a part of this
+	goal, you want your tests to avoid including implementation details of your 
+	components and rather focus on making your tests give you the confidence for 
+	which they are intended. As part of this, you want your testbase to be 
+	maintainable in the long run so refactors of your components (changes to 
+	implementation but not functionality) don't break your tests and slow you and 
+	your team down.
+
+
+-> This solution:
+	The RTL is a very light-weight solution for testing React components. It provides
+	light utility function on top of react-dom and react-dom/test-utils, in a way 
+	that encourages better testing practices. Its primary guiding principle is:
+
+	`
+		The more your tests resemble the way your software is used, the more 
+		confidence they can give you.
+	`
+
+	So rather than dealing with instances of rendered React components, your tests
+	will work with actual DOM nodes. The utilities this library provides facilitate
+	querying the DOM in the same way the user would. Finding form elements by their
+	label text(just like a user would), finding links and buttons from their text
+	(like a user would). It also exposes a recommended way to find elements by a 
+	data-testid as an "escape hatch" for elements where the text content and label do
+	not make sense or is not practical.
+
+	This lib encourages your applications to be more accessible and allows you to get
+	your tests closer to using your components the way a user will, which allows your
+	tests to give more confidence that your application will work when a real users
+	uses it.
+
+	This is replacement for Enzyme.
+
+	This lib is not a test runner. Use with jest (recommended) or with other test 
+	runners. see docs.
+
+Note: This lib is built on top of DOM testing lib which is where most of the logic
+behind the queries is.
+
+
+
+
+
+----
+
+# Next.js related issues with Jest and testing-library/react
+
+
+
+
+
+

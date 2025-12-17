@@ -904,7 +904,244 @@ Keep in mind that your machine is probably faster than your user's so it's a goo
 idea to test the performace with an artificial slowdown. For example, Chrome offers
 a CPU throttling option for this.
 
+Note - React compiler can autmatically memoize expensive calculations for you, 
+eliminating the need for manula useMemo in many cases.
 
+-> Resetting all state when a prop changes:
+Normally, React preserves the state when the same component is rendered in the same 
+sport, By pasing a key to the component, you're asking React to treat two instances of
+a components with different key as two different components that should not share any
+state. When the key (which you've set to) changes, React will recreate the DOM and
+reset teh state of the profile component and all its children and all of its children.
+
+-> Adjusting some state when a prop changes:
+Sometimes, you might want to reset or adjust a part of the state on a prop change, but
+not all of it.
+Don't update the state in effect. Instead do it during rendering.
+When you update a component during rendering, React throws away the returned JSX and 
+immidiately retries rendering. To avoid very slow cascading retries, React only lets 
+you update the same component's state during a render. If you update another component'
+s state during a render, you'll see an error. A condition like items !== prevItems is
+necessary to avoid loops. You may adjust state like this, but any other side effects
+(like changing the DOM or setting timeouts) should stay in event handlers or Effects to
+keep components pure.
+
+`
+
+	function List({ items }) {
+		const [isReverse, setIsReverse] = useState(false);
+		const [selection, setSelection] = useState(null);
+
+		const [prevItems, setPrevItems] = useState(items);
+		if (item !== prevItems) {
+			setPrevItems(items);
+			setSelection(null);
+		}
+		
+		//...
+	}
+
+	function	
+
+`
+
+Although this pattern is more efficient than an Effect, most components shouldn't need
+it either. No matter how you do it, adjusting state based on props or other state makes
+you data flow more difficult to understand and debug. Always check whether you can 
+reset all state with a key or calculate everything during rendering instead. e.g.
+instead of storing (and resetting) the selected item, you can store the selected item 
+ID.
+
+`
+	
+	function List({item}) {
+		const [isReverse, setIsReverser] = useState(false);
+		const [selectedId, setSelectedId] = useState(null);
+	
+		// Best: calculate everything during rendering
+		const selection = items.find(item => item.id === selectedId) ?? null;
+
+	}
+
+`
+
+Now there is no need to 'adjust' the state at all. If the item with the selected ID is
+in the list, it remains selected. If it's not, the seletion calculated during rendering
+will be null because no matching item was found. This behaviour is different, but 
+arguably better because most changes to items preserve the selection.
+
+-> Sharing Logic b/w event handlers:
+When you're not sure whether some code should be in a Effect or in an event handler, 
+ask yourself why this code needs to run. Use Effects only for code that should run 
+because the component was displayed to the user.
+
+-> Sending a POST request:
+Avoid: Event-specific logic inside an Effect
+If you want to do something, set a state or send network request, at one specific 
+moment in time - when the user presses the button - It should only ever happen on that
+particular interaction - hence envent handler should handle those things.
+
+When you choose whether to put some logic into an event handler or an Effect, the main
+question you need to answer is what kind of logic it is from the user'e prespective. If
+this logic is caused by a particular interaction, keep it in the event handler. If it's
+caused by the user seeing the component on the screen, keep it in the Effect.
+
+-> Chain of computations:
+Sometimes you might feel tempted to chain Effects that each adjust a piece of state
+based on other state.
+There are two problems with this code:
+
+1. The first problem is that it is very inefficient: the component (and its children)
+have to re-render b/w each set call in the chain.
+
+2. The second problem is that even if it weren't slow, as your code evolves, you will 
+run unto cases where the 'chain' you wrote doesn't fit the new requirements.
+
+In this case, it's better to calculate what you can during rendering, and ajust the 
+state in the event handler. This is a lot more efficient. Now you will able to set 
+each state variable to a move from the past without triggering the Effect chain that
+adjusts every other value. If you need to reuse logic b/w several event handlers, you
+can extract function adn call it from those handlers.
+
+Remember that inside event handlers, stat behaves like a snapshot.
+
+In some cases, you can't calculate the next state directly in the event handler. For
+example, imagine a form with multiple dropdowns where the options of the next dropdown
+depend on the selected value of teh previous dropdown. Then a chain of Effects is 
+appropiate because you are synchronizing with network.
+
+-> Initializing the application
+Some logic should only run once when the app loads. You might be tempeted to place it 
+in an Effect in the top-level component. However, you'll quickly discover that it runs
+twice in development. This can cause issues - for example, maybe it invalidates the
+authentication token because the function wasn't designed to be called twice. In 
+general, your component should be resilient to be remounted. This includes your top-
+level App component.
+Although it may not ever get remounted in practice in production, following the same
+constraints in all components makes it easier to move and reuse code. If some logic 
+must run once per app load rather than once per component mount, add a top-level 
+variable to track whether it has already executed.
+
+`
+	
+	let didInit = false;
+
+	function App() {
+		useEffect(() => {
+			if (!didInit) {
+				// Only runs once per app load
+			}
+		}, []);
+
+		// ...
+	}
+
+`
+
+You can also run it during module initialization and before the app renders.
+
+`
+
+	if (typeof window !== 'undefined') {
+		// Only runs per app load
+	}
+
+	function App() {
+		// ...
+	}
+
+`
+
+Code at the top level runs once when your component is imported - even it it doesn't
+end up being rendered. To avoid slowdown or surprising behavior when importing
+arbitrary components, don't overuse this pattern. Kee app-wide initialization logic to
+root component madules lek App.js or in your application's entry point.
+
+
+-> Notifying parent compoenents about state changes: see docs
+Lift up the state instead.
+
+-> Passing data to the parent
+In React, data flows from the parent to their children. When you see something wrong on
+the screen, you can trace where the information comes from by going up the component
+chain until you find which component passes the wrong prop or has the wrong state. When
+child components update the state of their parent components in Effects, the data flow
+becomes very difficult to trace. Since both the child and the parent need the same data
+, let the parent component fetch teh data, and pass it down the child instead.
+
+This is simpler and keeps the data flow predictable: the data flow down from the parent
+to the child.
+
+-> Subscribing to an external store
+Sometime, your component may need to subscribe to some data outside of the React state.
+Since this data can change without React's knowledge, you may need to manually
+subscribe your components to it. This is often done with an Effect.
+Although it's common to use Effects for this, React has a purpose-built Hook for 
+subscribiing to an external store that is prefferred instead. Delete the Effect and
+replace it with a call to useSyncExternalStore.
+
+`
+
+	function subscribe(callback) {
+		window.addEventListner('online', callback);
+		window.addEventListner('offline', callback);
+
+		return () => {
+			window.removeEventListner('onlin', callback);
+			window.removeEventListner('offline', callback);
+		}
+	}
+
+
+	function useOnlineStatus() {
+		return useSyncExternalStore( 
+			subscribe, // React won't resubscribe for as long as you pass the same 
+						// function
+			() => navigator.onLine, // how to get the value on the client
+			() => true  // how to get the value on the server
+		);
+	}
+
+
+	function ChatIndicator() {
+		const isOnline = useOnlineStatus();
+		//...
+	}
+	
+`
+
+This approach is less error-prone than manually sncing mutable data to React state with
+an Effect. Typically, you'll write a custom Hook like useOnlineStatus() above so that
+you don't need to repeat this code in the individual components.
+
+-> Fetching data
+Avoid fetching without cleanup logic in an Effect.
+The 'race condition': Two different requests 'raced' against each other and came in a 
+different order that you expected.
+To fix the race condition, you need to add a cleanup function to ignore stale responses
+
+see example in the docs
+
+Handling race conditions is not the only difficulty with implementing data fetching. 
+You might also want to think about caching responses (so that the user can click Back 
+and see the previous screen instantlyh), how to fetch data on the server (so that the
+intial server rendered HTML constains the fetched content instead of a spinner), and 
+how to avoid network waterfalls (so that a child can fetch data without waiting for 
+every parent). Use frameworks for these solution.
+
+If you don't use a framework, and don't want to build your own, but would like to make
+data fetching from Effects more ergonomic, consider extracting your fetching logic into
+a custom Hook. See docs for example. 
+[data fetching](https://react.dev/learn/you-might-not-need-an-effect#fetching-data)
+
+You'll likely also want to add some logic for error handling and to track whether the
+content is loading. You can build a Hook like this yourself or use one of the many 
+solutions already available in the React ecosystem.
+
+In general, whenever you have to resort to writing Effects, keep an eye out for when you
+can extract a piece of functionality into a custom Hook with a more declarative and 
+purpose-built API. The fewer raw useEffect calls you have in your components, the easier
+you will find to maintain your application.
 	
 
 # Hooks list
