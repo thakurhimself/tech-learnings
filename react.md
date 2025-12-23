@@ -1142,6 +1142,155 @@ In general, whenever you have to resort to writing Effects, keep an eye out for 
 can extract a piece of functionality into a custom Hook with a more declarative and 
 purpose-built API. The fewer raw useEffect calls you have in your components, the easier
 you will find to maintain your application.
+
+
+## Lifecycle of Reactive Effects
+Effects have a different lifecycle from components. Componnets may mount, update, or 
+unmount. An Effect can only do things: to start synchronizing something, and later to 
+stop synchronizing it. This cycle can happen multiple times if your Effect depends on 
+props and state that change over time. React provides a  linter rule to check that you've
+specified your Effects deps correctly. This your Effect sychronized to latest props and
+state.
+
+-> The lifecycle of an Effect
+Every React component goes through the same lifecycle:
+
+* A component mounts when it's added to the screen.
+* A component updates when it receives new props or state, usually in response to an 
+  interaction.
+* A component unmounts when it's removed from the screen.
+
+It's a good way to think about components, but not about Effects. Instead, try to think
+about each Effect independently from your component's lifecycle. An Effects describes 
+how to synchronize an external system to the current props and state. As your code 
+changes, sychronization will need to happen more or less often.
+
+see chatroom component example on the section's webpage
+
+Intuitively, one might think React would start synchronizing and stop synchronizing upon
+mount and unmount, but this is not the end of the story! Sometimes it may also be 
+necessary to start and stop syncing multiple times while component remains unmounted.
+
+Note - Some Effects don't return a cleanup function at all. More often than not, you'll
+want to return one - but if you don't, React will behave as if you returned an empty
+cleanup function.
+
+-> How React re-synchroninzes you Effect:
+To stop synchronizing, React will call the cleanup function that your Effect returned in
+the previous render. Then React will run the Effect that you've provided during this
+render.
+Finally, when the user goes to a different screen - the component unmounts. Now there is
+no need to stay connected at all. React will stop synchronizing your Effect one last time
+
+-> Thinking from the Effect's perspective:
+When you look from the component's perspective, it was tempting to think of Effects as 
+"callbacks" or "lifecycle events" that fire at a specific time like "after a render" or
+"before unmount". This way of thinking gets complicated very fast, so it's best to avoid.
+
+Instead, always focus on single start/stop cycle at a time. It shouldn't matter whether
+a component is mounting, updating, or unmounting. All you need to do is to describe how
+to start synchronization and how to stop it. If you do it well, your Effect will be 
+resilient to being started and stopped as many times as it's needed.
+
+-> How React verifies that our Effect can re-synchronize:
+Every time after your component re-renders, React will look at the array of dependencies
+that you have passed. If any of the values in the array is different from the value at 
+the same spot that you passed during previous render,React will re-synchronize your 
+Effect. The different values are compared with Object.is.
+
+-> Each Effect represents a separate syncrhonization process:
+Resist adding unrelated logic to your Effect only because this logic needs to run at the
+same time as an Effect you already wrote.
+Each Effect in your code should represent a separate and independent synchronization
+process.
+
+-> Effects "react" to reactive values:
+Props, state, and other values declared inside the component are reactive because they're
+calculated during rendering and participate in the React data flow.
+
+-> What an Effect with empty dependencies means:
+Thinking from the component's perspective, the empty [] dependency array means this 
+Effect executes the logic inside it when the component mounts, and perform any cleaning
+logic only when the component unmounts. (Keep in mind that React would still 
+re-synchronizing it an extra time in development to stress-test your logic).
+However, if you think from the Effect's perspective, you don't need to think about 
+mounting and unmounting at all. What's important is you've specified what your Effect
+does to start and stop synchronizing. Today, it has no reactive dependencies. But if you
+ever want to add reactive values to dependencies just add them in the dependency array 
+and adjust the logic incorporating reactive values.
+
+-> All variables declared in the component body are reactive:
+Props and state aren't the only reactive values. Values that you calculate from them are
+also reactive. If the props or state change, your component will re-render, and the 
+values calculated from them will also change. This is why all variables from the 
+component body used by the Effect should be in the Effect dependency list.
+A regulare variable that you calculate during rendering is reactive, because it's 
+calculated during rendering, so it can change due to a re-render.
+
+All values inside the component (including props, state, and variables in your component'
+s body) are reactive. Any reactive value can change on a re-render, so you need to 
+include reactive values as Effect's dependencies.
+
+In other words, Effects "react" to all values from the component body.
+
+Note: Mutable values (inlcuding global variables) aren't reactive.
+1. A mutable value like location.pathname can't be dependency. It's mutable, so it can
+change at any time completely outside of the React rendering data flow. Changing it 
+wouldn't trigger a re-render of your component. Therefore, even if you specified it in 
+the dependencies, React wouldn't konw to re-synchronize the Effect when it changes. This
+also breaks the rules of React because reading mutable data during rendering (which is 
+when you calculate the dependencies) breaks purity of rendering. Instead,  You should 
+read and sub to an external mutable value with useSyncExternalStore.
+
+2. A mutable value like ref.current or things you read from it also can't be a dependency
+. The ref object returned by useRef itself can be a dependency, but its current property
+is intentionally mutable. It lets you keep track of something without triggering a 
+re-render. But Since changin it doesn't trigger a re-render, it's not a reactive value,
+and React won't konw to re-run your Effect when it changes.
+
+-> React verifies that you specified every reactive value as dependency:
+If your linter is configured for React, it will check and notify if any dependency is 
+missing.
+
+Note - In some cases, React knows that a value never changes even though it's declared
+inside the component. For example, the set function returned from useState and the ref
+object returned by useRef are stable - they are guaranteed to not change on a re-render.
+Stable values aren't reactive, so you may omit them from the list. Including them is
+allowed: they won't change, so it doesn't matter.
+
+-> What to do when you don't want to re-synchronize:
+You can prove to the linter that these values aren't reactive values, i.e. that they 
+can't change as a result of a re-render. For example you can move them outside the
+component; now they don't need to be dependencies.
+You can also move them inside the Effect. They aren't calculated during rendering, so 
+they're not reactive.
+
+Effects are reactive blocks of code. They re-synchronize when the values you read inside
+of them change. Unlike event handlers, which only run once per interationm, Effects run
+whenever synchronization is necessary.
+
+You can't choose your dependencies. Your dependencies must include every reactive value
+you read in the Effect. The linter enforces this. Sometimes this may lead to problems 
+like infinite loops and to your Effect re-synchronizing too often. Don't fix these 
+problems by suppressing the linter! Here's what to try instead:
+
+* Check that your Effect represents an independent synchronization process. If your
+Effect doesn't sync anything, it might unnecessary. If it syncrhonizes several 
+independent things, split it up.
+
+* If you wnat to read the lates values of props or state without "reacting" to it and
+re-synchronizing the Effect, you can split your Effect into a reactive part(which you'll
+keep in the Effect) and a non-reactive part(which you'll extract into something called an
+Effect event).
+
+* Avoid relying on objects and functions as dependencies. If you create objects and 
+functions during rendering and then read them from an Effect, they will be different on
+every render. This will cause you Effect to re-synchronize every time.
+
+
+## Separating Events from Effects
+
+
 	
 
 # Hooks list
