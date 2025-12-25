@@ -1289,8 +1289,31 @@ every render. This will cause you Effect to re-synchronize every time.
 
 
 ## Separating Events from Effects
+Event handlers only re-run when you perform the same interaction again. Unlike event
+handlers, Effects re-synchronize if some value they read, like a prop or a state variable
+, is different from what it was during the last render. Sometimes, you also want a mix
+of both behaviors: an Effects that re-runs in response to some values but not others.
 
+Should you use event handlers or Effects? Every time you need to answer this question, 
+consider why the code needs to run.
 
+* Event handlers run in response to specific interactions
+* Effects run whenever synchronization is needed
+
+-> Reactive values and reactive logic:
+Props, state, and variables declared inside your component's body are called reactive
+values. They participate in the rendering data flow.
+
+Reactive values like these can change due to a re-render. Event handlers and Effects
+respond to changes differently:
+
+* Logic inside event handler is not reactive:- It will not run again unless the user 
+performs the same interation (e.g. a click) again. Event handlers can read reactive 
+values without "reacting" to their changes.
+
+* Logic inside Effet is reactive:- If your Effect reads a reactive value, you have to 
+specify it as a dependency. Then, if a re-render causes that value to change, React will
+re-run your Effect's logic with the new value.
 	
 
 # Hooks list
