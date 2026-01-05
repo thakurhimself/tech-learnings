@@ -1314,9 +1314,139 @@ values without "reacting" to their changes.
 * Logic inside Effet is reactive:- If your Effect reads a reactive value, you have to 
 specify it as a dependency. Then, if a re-render causes that value to change, React will
 re-run your Effect's logic with the new value.
+
+-> Declaring an Effect event:
+When you mix non reactive and reactive logic inside the Effect and declare the deps there
+is a problem of running reactive logic even if you only wants to run non-reactive logic.
+see docs for example. 
+To solve this problem use a special Hook called useEffectEvent to extract non reactive
+logic out of your Effect.
+
+`
+	function ChatRoom({roomId, theme}) {
+		const onConnected = useEffectEvent(() => {
+			showNotification('Connected', theme);
+		}
+		//...
+
+		useEffect(() => {
+			// logic related to roomId change
+			onConnected()
+		}, [roomId]); // all deps declared; no need to pass theme as dep
+	}
+`
+
+Here, onConnected is called an Effect Event. It's a part of your Effect logic, but it 
+behaves a lot more like an event handler. The logic inside it is not reactive, and it
+always 'sees' the latest values of your props and state.
+This solves the problem. Note that you had to remove theme from the list of Effect's deps
+because it's no longer used in the Effect. You also don't need to add onConnected to it,
+because **Effect Events are not reactive and must be omited from dependencies**.
+
+You can think of Effect Events as being very similar to event handlers. The main 
+difference is that event handlers run in response to a user interactions, whereas Effect
+Events are triggered by you from Effects. Effects Events let you "break the chain" b/w
+the reactivity of Effects and code that should not be reactive.
+
+-> Reading lastest props and state with Effect Events: see docs
+
+-> Limitations of Effect Events:
+Effect Events are very limited in how you can use them:
+
+* Only call them from inside Effects.
+* Never pass them to other components or Hooks.
+
+Always declare Effects Events directly next to the Effects that use them.
+Effect Events are non-reactive "pieces" of your Effect code. They should be next to the
+Effect using them.
+
+
+### Removing Effect Dependencies
+See docs for detail explanation. Use this guide to remove unnecessary deps from ur Effect
+
+When you write an Effect, you first specify how to start and stop whatever you want your
+Effect to be doing. Then, if you leave the Effect dependencies empty([]), the linter will
+suggest the correct dependencies.
+
+Note - Reactive values include props and all variables and functions declared directly
+inside of your component.
+
+To remove a dependency, "prove" to the linter that it doesn't need to be dependency. For
+example, you can move the reactive value out of your component to prove that it's not
+reactive and won't change on re-render.
+
+-> To change the dependencies, change the code
+You might have noticed a pattern in your workflow:
+
+1. First, you change the code of your Effect or how your reactive valuse are declared.
+2. Then, you follow the linter and adjust the dependencies to match the code you have
+	changed.
+3. If you're not happy withthe list of dependencies, you go back to the first step.
+
+The last part is important. If you want to change the dependencies, change the
+surrounding code first. You can think of the dependency list as a list of all the 
+reactive values used by your Effect's code. You don't choose what to put on the list. The
+list describes your code. To change the dependency list, change the code.
+
+Note - When dependencies don't match the code, there is a very high risk of introducing
+bugs.
+
+Note -It is recommended treating the dependency lint error as a compilation error. If
+you don't suppress it, you will never see bugs like me.
+
+-> Removing unnecessary dependencies
+You'll need to answer a few questions about your Effect.
+
+1. Should this code move an event handler?
+	The first thing you should think about is whether this code should be an Effect at
+	all. Avoid event specific logic inside an Effect. To run some code in response to 
+	particular interaction, put that logic directly into the corresponding event handler.
+2. Is your Effect doing several unrelated things?
+	The next question you should ask yourself is whether your Effect is doing several
+	unrelated things. Avoid syncrhonizing two independent processes in a single Effect.
+	Split the logic into two Effects, each of which reacts to the prop that it needs to
+	synchronize with. Each Effect should represent an independent sync process.
+3. Are you reading some state to calculate the next state?
+	see docs. React puts your updater function in a queue and will provide the prop 
+	argument to it during the next render.
+4. Do you want to read a value without "reacting" to it changes?
+	Move this non-reactive piece of logic into an Effect Event. Even wrap event handler 
+	prop into Effect Event to not trigger re-sync if different handler is passed on 
+	different renders. Effect Events aren't reactive, you don't need to specify them as
+	dependencies. see docs.
+5. Does some reactive value change unintentionally?
+	In JS, each newly created object and function is considered distinct from all the
+	others. It doesn't matter that the contents inside of them may be the same. Objects
+	and functions dependencies can make your Effect resynchronize more often than you 
+	need. This is why, whenever possible, you should avoid objects and functions as your
+	Effect's dependencies. Instead, try moving them outside the component, inside the
+	Effect, or extracting primitive values out of them.
+	If the objects doesn't depend on any props and state, you can move that object outside
+	the component.
+	Move dynamic objects and functions inside your Effect. If your object depends on some
+	reactive value that may change as a result of a re-render, you can't pull it outside
+	your component. You can, however, move its creation inside of your Effect's code.
+	This works for functions too. In JS, numbers and strings are compared by their 
+	content. You can write your own functions to group pieces of logic inside your Effect.
+	As long as you also declare them inside your Effect, they're not reactive values, and
+	so they don't need to be deps of your Effect.
+	Read primitive values from objects:- Sometimes, you may receive an object from props.
+	The risk here is that the parent component will create the object during rendering.
+	This would cause your Effect to re-connect everytime the parent component re-renders.
+	To fix this, read information from the object outside the Effect and avoid having 
+	object and function dependencies.
+	Calculate primitive values from functions:- The same approach works for functions.
+	lets suppose the parent component passes a function. To avoid making it a dependency
+	(and causing it to re-connect on re-renders), call it outside the Effect. This gives 
+	you the returned values that aren't objects, and that you can read from inside your
+	Effect. This only works for pure functions because they are safe to call during 
+	rendering. If your function is an event handler, but you don't want its changes to
+	re-sync your Effect, wrap it into an Effect Event instead.
 	
 
+
 # Hooks list
+
 
 1. useState
 
